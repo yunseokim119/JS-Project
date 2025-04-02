@@ -29,3 +29,20 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({ message: '서버 오류' });
   }
 };
+
+
+exports.deleteAccount = async (req, res) => {
+    try {
+      const userId = req.user.id; // JWT에서 유저 정보 추출됨
+  
+      const user = await User.findByPk(userId);
+      if (!user) return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+  
+      await user.destroy(); // DB에서 삭제
+  
+      res.status(200).json({ message: '회원 탈퇴 완료' });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: '서버 오류 발생' });
+    }
+  };

@@ -4,5 +4,6 @@ const userController = require('../controllers/userController');
 const auth = require('../middlewares/auth');
 
 router.put('/change-password', auth, userController.changePassword);
+router.delete('/delete-account', auth, userController.deleteAccount);
 
 module.exports = router;
