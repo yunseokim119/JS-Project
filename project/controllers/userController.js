@@ -46,3 +46,7 @@ exports.deleteAccount = async (req, res) => {
       res.status(500).json({ message: '서버 오류 발생' });
     }
   };
+
+  exports.logout = (req, res) => {
+    res.status(200).json({ message: '로그아웃 되었습니다.' });
+  };
