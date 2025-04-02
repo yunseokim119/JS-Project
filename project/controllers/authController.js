@@ -1,41 +1,46 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const users = [];
+const User = require('../models/User');
 
 exports.register = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const existingUser = users.find(user => user.email === email);
-  if (existingUser) {
-    return res.status(400).json({ message: '이미 가입된 이메일입니다.' });
+    // 중복 체크
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: '이미 등록된 이메일입니다.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({ email, password: hashedPassword });
+
+    res.status(201).json({ message: '회원가입 완료', userId: user.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '서버 오류' });
   }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = { email, password: hashedPassword };
-  users.push(newUser);
-
-  res.status(201).json({ message: '회원가입 성공!' });
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = users.find(user => user.email === email);
-  if (!user) {
-    return res.status(400).json({ message: '등록되지 않은 이메일입니다.' });
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ message: '이메일 또는 비밀번호가 잘못되었습니다.' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: '이메일 또는 비밀번호가 잘못되었습니다.' });
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ message: '로그인 성공', token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: '서버 오류' });
   }
-
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(400).json({ message: '비밀번호가 틀렸습니다.' });
-  }
-
-  const token = jwt.sign(
-    { email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' }
-  );
-
-  res.json({ message: '로그인 성공!', token });
 };
