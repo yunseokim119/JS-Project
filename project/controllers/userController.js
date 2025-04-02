@@ -1,52 +1,68 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { joinMailOptions } = require('../module/email');
+const nodemailer = require('nodemailer');
 
-exports.changePassword = async (req, res) => {
+console.log('📦 userController 로딩 시작됨');
+
+let transporter;
+try {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_ACCOUNT,
+      pass: process.env.emailPw,
+    },
+  });
+} catch (e) {
+  console.error('❌ transporter 생성 실패:', e);
+}
+
+console.log('📦 userController 로딩 완료');
+
+// ✅ 여기부터 exports 시작! 무조건 아래처럼!
+exports.register = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { currentPassword, newPassword } = req.body;
+    const { email } = req.body;
 
-    // DB에서 유저 조회
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ message: '이미 등록된 이메일입니다.' });
     }
 
-    // 현재 비밀번호 비교
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: '현재 비밀번호가 일치하지 않습니다.' });
-    }
+    const authCode = Math.random().toString(36).substr(2, 6);
 
-    // 새 비밀번호 해시 및 업데이트
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedNewPassword;
-    await user.save();
+    await User.create({
+      email,
+      password: '0',
+      authCode,
+      authState: false,
+      level: -1,
+    });
 
-    res.status(200).json({ message: '비밀번호가 성공적으로 변경되었습니다.' });
+    const mailOption = joinMailOptions(email, authCode);
+    await transporter.sendMail(mailOption);
+
+    res.status(200).json({ message: '인증코드를 이메일로 전송했습니다.' });
   } catch (err) {
-    console.error('비밀번호 변경 오류:', err);
+    console.error('❌ register 함수 오류:', err);
     res.status(500).json({ message: '서버 오류' });
   }
 };
 
+exports.updateUser = (req, res) => {
+  res.send('사용자 업데이트 완료');
+};
 
-exports.deleteAccount = async (req, res) => {
-    try {
-      const userId = req.user.id; // JWT에서 유저 정보 추출됨
-  
-      const user = await User.findByPk(userId);
-      if (!user) return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
-  
-      await user.destroy(); // DB에서 삭제
-  
-      res.status(200).json({ message: '회원 탈퇴 완료' });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: '서버 오류 발생' });
-    }
+exports.changePassword = (req, res) => {
+    res.send('비밀번호 변경');
   };
-
+  
+  exports.deleteAccount = (req, res) => {
+    res.send('회원 탈퇴 완료');
+  };
+  
   exports.logout = (req, res) => {
-    res.status(200).json({ message: '로그아웃 되었습니다.' });
+    res.send('로그아웃 완료');
   };

@@ -10,10 +10,21 @@ const User = sequelize.define('User', {
   password: {
     type: DataTypes.STRING,
     allowNull: false,
-  }
+  },
+  authCode: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  authState: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  level: {
+    type: DataTypes.INTEGER,
+    defaultValue: -1,
+  },
 }, {
-  tableName: 'users',  
-  timestamps: true,    
+  timestamps: true,
 });
 
 module.exports = User;

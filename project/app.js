@@ -17,7 +17,7 @@ app.use(userRoutes);
 sequelize.authenticate()
   .then(() => {
     console.log('✅ MySQL 연결 성공');
-    return sequelize.sync();
+    return sequelize.sync({ alter: true });
   })
   .then(() => {
     console.log('✅ 테이블 동기화 완료');
