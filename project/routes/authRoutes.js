@@ -1,15 +1,21 @@
 const express = require('express');
 const router = express.Router();
+
+const authController = require('../controllers/authController');
+const auth = require('../middlewares/auth');
+
 const {
   register,
   confirmRegister,
   login,
   checkAuthCode,
-} = require('../controllers/authController');
+  deleteAccount
+} = authController;
 
-router.post('/register', register);          // 이메일 등록 + 인증코드 전송
-router.post('/register/confirm', confirmRegister); // 인증코드 확인 + 비밀번호 설정
+router.post('/register', register);                  
+router.post('/register/confirm', confirmRegister);   
 router.post('/login', login);
 router.get('/check-auth-code', checkAuthCode);
+router.delete('/', auth, deleteAccount);             
 
 module.exports = router;

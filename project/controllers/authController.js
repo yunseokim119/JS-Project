@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { joinMailOptions } = require('../module/email');
-console.log('✅ joinMailOptions type:', typeof joinMailOptions); // "function" 이어야 정상!
+console.log('✅ joinMailOptions type:', typeof joinMailOptions);
 const { Op } = require('sequelize');
 const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
@@ -128,3 +128,17 @@ exports.checkAuthCode = async (req, res) => {
     res.status(500).json({ message: '서버 오류' });
   }
 };
+
+// 회원 탈퇴
+exports.deleteAccount = async (req, res) => {
+    try {
+      const userId = req.user.id;
+  
+      await User.destroy({ where: { id: userId } });
+  
+      res.status(200).json({ message: '회원 탈퇴가 완료되었습니다.' });
+    } catch (err) {
+      console.error('회원 탈퇴 오류:', err);
+      res.status(500).json({ message: '서버 오류' });
+    }
+  };
