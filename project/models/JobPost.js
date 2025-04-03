@@ -25,6 +25,10 @@ const JobPost = sequelize.define('JobPost', {
   postedBy: {
     type: DataTypes.INTEGER, // 관리자 유저 ID 저장
     allowNull: false,
+  },
+  fileUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
   }
 }, {
   timestamps: true,
