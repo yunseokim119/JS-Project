@@ -5,10 +5,12 @@ const express = require('express');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const jobPostRoutes = require('./routes/jobPostRoutes');
+const likeRoutes = require('./routes/likeRoutes');
 
 const sequelize = require('./module/database');
 const User = require('./models/User');
 const JobPost = require('./models/JobPost');
+const Like = require('./models/Like');
 
 const app = express();
 
@@ -20,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use(userRoutes);
 app.use('/api/jobposts', jobPostRoutes);
+app.use('/api/jobposts/like', likeRoutes);
 
 // ✅ DB 연결 및 서버 실행
 sequelize.authenticate()
@@ -37,3 +40,9 @@ sequelize.authenticate()
   .catch(err => {
     console.error('❌ DB 연결 또는 테이블 동기화 실패:', err);
   });
+
+  Like.belongsTo(User, { foreignKey: 'userId' });
+  Like.belongsTo(JobPost, { foreignKey: 'jobPostId' });
+
+  User.hasMany(Like, { foreignKey: 'userId' });
+  JobPost.hasMany(Like, { foreignKey: 'jobPostId' });
