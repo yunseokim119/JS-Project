@@ -23,6 +23,10 @@ const User = sequelize.define('User', {
     type: DataTypes.INTEGER,
     defaultValue: -1,
   },
+  loginType: {
+    type: DataTypes.STRING,
+    defaultValue: 'email',
+  },
 }, {
   timestamps: true,
 });
