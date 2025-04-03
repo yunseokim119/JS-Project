@@ -4,14 +4,18 @@ dotenv.config();
 const express = require('express');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const jobPostRoutes = require('./routes/jobPostRoutes');
+
 const sequelize = require('./module/database');
 const User = require('./models/User');
+const JobPost = require('./models/JobPost');
 
 const app = express();
 
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use(userRoutes);
+app.use('/api/jobposts', jobPostRoutes);
 
 // DB 연결 테스트
 sequelize.authenticate()
