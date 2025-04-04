@@ -3,17 +3,18 @@ const router = express.Router();
 const auth = require('../middlewares/auth');
 
 const {
-    register,
-    confirmRegister,
-    login,
-    checkAuthCode,
-    deleteAccount,
-    kakaoLogin
-  } = require('../controllers/authController');
+  register,
+  confirmRegister,
+  login,
+  checkAuthCode,
+  deleteAccount,
+  kakaoLogin,
+  grantAdminRole
+} = require('../controllers/authController');
 
 // 회원가입
-router.post('/register', register);                 // 이메일 인증코드 발송
-router.post('/register/confirm', confirmRegister);  // 인증코드 확인 + 비밀번호 설정
+router.post('/register', register);
+router.post('/register/confirm', confirmRegister);
 
 // 카카오 로그인
 router.post('/kakao', kakaoLogin);
@@ -21,10 +22,13 @@ router.post('/kakao', kakaoLogin);
 // 로그인
 router.post('/login', login);
 
-// 인증코드 유효성 확인 (선택)
+// 인증코드 확인
 router.get('/check-auth-code', checkAuthCode);
 
 // 회원 탈퇴
 router.delete('/', auth, deleteAccount);
+
+// ✅ 관리자 권한 부여 (본인만 가능)
+router.put('/grant-admin', auth, grantAdminRole);
 
 module.exports = router;

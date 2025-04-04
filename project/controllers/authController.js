@@ -124,65 +124,96 @@ exports.deleteAccount = async (req, res) => {
 
 // ✅ 6. 카카오 로그인
 exports.kakaoLogin = async (req, res) => {
-    const { code } = req.body;
-  
-    try {
-      // 1. access_token 발급
-      const tokenRes = await axios.post(
-        'https://kauth.kakao.com/oauth/token',
-        qs.stringify({
-          grant_type: 'authorization_code',
-          client_id: process.env.KAKAO_REST_API_KEY,
-          redirect_uri: process.env.KAKAO_REDIRECT_URI,
-          code,
-        }),
-        {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        }
-      );
-  
-      const accessToken = tokenRes.data.access_token;
-  
-      // 2. 사용자 정보 요청
-      const userRes = await axios.get('https://kapi.kakao.com/v2/user/me', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-  
-      const kakaoUser = userRes.data;
-      const kakaoEmail = kakaoUser.kakao_account.email;
-  
-      if (!kakaoEmail) {
-        return res.status(400).json({ message: '카카오 계정에 이메일이 없습니다.' });
+  const { code } = req.body;
+
+  try {
+    // 1. access_token 발급
+    const tokenRes = await axios.post(
+      'https://kauth.kakao.com/oauth/token',
+      qs.stringify({
+        grant_type: 'authorization_code',
+        client_id: process.env.KAKAO_REST_API_KEY,
+        redirect_uri: process.env.KAKAO_REDIRECT_URI,
+        code,
+      }),
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       }
-  
-      // 3. 우리 DB에 존재 여부 확인 (없으면 자동 회원가입)
-      let user = await User.findOne({ where: { email: kakaoEmail } });
-  
-      if (!user) {
-        user = await User.create({
-          email: kakaoEmail,
-          password: 'kakao_login', // 일반 로그인용 비밀번호는 의미 없음
-          authState: true,
-          level: 0,
-          loginType: 'kakao',
-        });
-      }
-  
-      // 4. 토큰 발급
-      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-        expiresIn: '1h',
-      });
-  
-      return res.status(200).json({
-        message: '카카오 로그인 성공',
-        accessToken: token,
-        userId: user.id,
-        email: user.email,
-      });
-    } catch (err) {
-      console.error('카카오 로그인 오류:', err);
-      return res.status(400).json({ message: '카카오 로그인 실패' });
+    );
+
+    const accessToken = tokenRes.data.access_token;
+
+    // 2. 사용자 정보 요청
+    const userRes = await axios.get('https://kapi.kakao.com/v2/user/me', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const kakaoUser = userRes.data;
+    const kakaoEmail = kakaoUser.kakao_account.email;
+
+    if (!kakaoEmail) {
+      return res.status(400).json({ message: '카카오 계정에 이메일이 없습니다.' });
     }
-  };
+
+    // 3. 우리 DB에 존재 여부 확인 (없으면 자동 회원가입)
+    let user = await User.findOne({ where: { email: kakaoEmail } });
+
+    if (!user) {
+      user = await User.create({
+        email: kakaoEmail,
+        password: 'kakao_login',
+        authState: true,
+        level: 0,
+        loginType: 'kakao',
+      });
+    }
+
+    // 4. 토큰 발급
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
+    return res.status(200).json({
+      message: '카카오 로그인 성공',
+      accessToken: token,
+      userId: user.id,
+      email: user.email,
+    });
+  } catch (err) {
+    console.error('카카오 로그인 오류:', err);
+    return res.status(400).json({ message: '카카오 로그인 실패' });
+  }
+};
+
+// ✅ 7. 관리자 권한 부여
+exports.grantAdminRole = async (req, res) => {
+  try {
+    const requesterId = req.user.id; // 🔥 토큰에서 인증된 본인 ID
+    const requester = await User.findByPk(requesterId);
+    if (!requester) {
+      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    // ✅ 현재 관리자 수 체크
+    const adminCount = await User.count({ where: { role: 'admin' } });
+
+    // ✅ 관리자 1명 이상 있을 때, 이미 관리자는 또 승격할 필요 없음
+    if (adminCount > 0 && requester.role === 'admin') {
+      return res.status(400).json({ message: '이미 관리자인 유저입니다.' });
+    }
+
+    // ✅ 관리자 권한 부여
+    requester.role = 'admin';
+    await requester.save();
+
+    return res.status(200).json({
+      message: '관리자 권한이 부여되었습니다.',
+      user: requester
+    });
+  } catch (err) {
+    console.error('관리자 권한 부여 오류:', err);
+    return res.status(500).json({ message: '서버 오류' });
+  }
+};
