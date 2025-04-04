@@ -1,6 +1,7 @@
 const JobPost = require('../models/JobPost');
 const { Op } = require('sequelize');
 const dayjs = require('dayjs');
+const View = require('../models/View');
 
 // ✅ D-day 계산 함수
 function calculateDday(deadline) {
@@ -49,6 +50,25 @@ exports.getJobPostById = async (req, res) => {
 
     if (!post) {
       return res.status(404).json({ message: '공고를 찾을 수 없습니다.' });
+    }
+
+    // ✅ 조회 기록 저장 (중복 저장 방지) + 디버깅 추가
+    if (req.user) {
+      console.log('📍 View 저장 시도:', {
+        userId: req.user.id,
+        jobPostId: post.id,
+      });
+
+      await View.findOrCreate({
+        where: {
+          userId: req.user.id,
+          jobPostId: post.id,
+        }
+      });
+
+      console.log('✅ View 저장 완료');
+    } else {
+      console.log('❌ View 저장 실패 (req.user 없음)');
     }
 
     const formatted = {

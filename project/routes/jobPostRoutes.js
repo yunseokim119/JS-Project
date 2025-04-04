@@ -10,7 +10,7 @@ const isAdmin = require('../middlewares/isAdmin');
 router.get('/', jobPostController.getAllJobPosts);
 
 // ✅ 공고 단건 조회
-router.get('/:id', jobPostController.getJobPostById);
+router.get('/:id', auth, jobPostController.getJobPostById);
 
 // ✅ 공고 등록 (관리자만 가능 + 파일 업로드)
 router.post('/', auth, isAdmin, upload.attachment.single('file'), jobPostController.createJobPost);
