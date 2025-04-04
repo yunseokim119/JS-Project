@@ -6,30 +6,30 @@ const JobPost = sequelize.define('JobPost', {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  company: {
-    type: DataTypes.STRING,
+  deadline: {
+    type: DataTypes.DATEONLY, // 마감일
     allowNull: false,
   },
-  description: {
-    type: DataTypes.TEXT,
+  jobTitle: {
+    type: DataTypes.STRING, // 일자리명
     allowNull: false,
   },
   location: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING, // 근무 지역
     allowNull: false,
   },
-  salary: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  postedBy: {
-    type: DataTypes.INTEGER, // 관리자 유저 ID 저장
+  field: {
+    type: DataTypes.STRING, // 모집 분야
     allowNull: false,
   },
   fileUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING, // 첨부파일 URL (선택)
     allowNull: true,
-  }
+  },
+  postedBy: {
+    type: DataTypes.INTEGER, // 등록자 (관리자 userId)
+    allowNull: false,
+  },
 }, {
   timestamps: true,
 });

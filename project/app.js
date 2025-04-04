@@ -18,6 +18,12 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ✅ 모델 관계 설정 (💥 sync 전에 해야 함)
+Like.belongsTo(User, { foreignKey: 'userId' });
+Like.belongsTo(JobPost, { foreignKey: 'jobPostId' });
+User.hasMany(Like, { foreignKey: 'userId' });
+JobPost.hasMany(Like, { foreignKey: 'jobPostId' });
+
 // ✅ 라우터 등록
 app.use('/api/auth', authRoutes);
 app.use(userRoutes);
@@ -28,7 +34,7 @@ app.use('/api/jobposts/like', likeRoutes);
 sequelize.authenticate()
   .then(() => {
     console.log('✅ MySQL 연결 성공');
-    return sequelize.sync({ alter: true });
+    return sequelize.sync();
   })
   .then(() => {
     console.log('✅ 테이블 동기화 완료');
@@ -40,9 +46,3 @@ sequelize.authenticate()
   .catch(err => {
     console.error('❌ DB 연결 또는 테이블 동기화 실패:', err);
   });
-
-  Like.belongsTo(User, { foreignKey: 'userId' });
-  Like.belongsTo(JobPost, { foreignKey: 'jobPostId' });
-
-  User.hasMany(Like, { foreignKey: 'userId' });
-  JobPost.hasMany(Like, { foreignKey: 'jobPostId' });
