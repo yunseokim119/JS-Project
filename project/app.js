@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const jobPostRoutes = require('./routes/jobPostRoutes');
 const likeRoutes = require('./routes/likeRoutes');
 const viewRoutes = require('./routes/viewRoutes');
+const gptRoutes = require('./routes/gptRoutes');
 
 const sequelize = require('./module/database');
 const User = require('./models/User');
@@ -19,7 +20,14 @@ const app = express();
 // ✅ JSON, URL-encoded 파싱
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ✅ 라우터 등록
+app.use('/api/auth', authRoutes);
+app.use(userRoutes);
+app.use('/api/jobposts', jobPostRoutes);
+app.use('/api/jobposts/like', likeRoutes);
 app.use('/api/jobposts/view', viewRoutes);
+app.use('/api/gpt', gptRoutes);
 
 // ✅ 모델 관계 설정
 Like.belongsTo(User, { foreignKey: 'userId' });
@@ -32,17 +40,11 @@ View.belongsTo(JobPost, { foreignKey: 'jobPostId' });
 User.hasMany(View, { foreignKey: 'userId' });
 JobPost.hasMany(View, { foreignKey: 'jobPostId' });
 
-// ✅ 라우터 등록
-app.use('/api/auth', authRoutes);
-app.use(userRoutes);
-app.use('/api/jobposts', jobPostRoutes);
-app.use('/api/jobposts/like', likeRoutes);
-
 // ✅ DB 연결 및 서버 실행
 sequelize.authenticate()
   .then(() => {
     console.log('✅ MySQL 연결 성공');
-    return sequelize.sync(); // force: true 필요 없음
+    return sequelize.sync();
   })
   .then(() => {
     console.log('✅ 테이블 동기화 완료');
