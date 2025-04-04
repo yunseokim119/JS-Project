@@ -48,7 +48,7 @@ async function gptVisionHandler(req, res) {
     const { text } = req.body;
     const file = req.file;
 
-    console.log('Received Text:', text);
+    console.log('Received Text:', text || 'No Text');
     console.log('Received File:', file ? 'File Provided' : 'No File');
 
     if (!text && !file) {
@@ -59,10 +59,8 @@ async function gptVisionHandler(req, res) {
     let base64Image = null;
 
     if (text) {
-      // 텍스트가 있으면 텍스트 분석 프롬프트
       finalPrompt = `${TEXT_PROMPT}\n${text}`;
-    } else if (file) {
-      // 텍스트 없고 파일만 있으면 이미지 분석 프롬프트
+    } else {
       base64Image = await fileToBase64(file.path);
       finalPrompt = IMAGE_PROMPT;
     }
@@ -71,11 +69,12 @@ async function gptVisionHandler(req, res) {
 
     console.log('GPT Vision Response:', result);
 
-    // result에서 { } 부분만 뽑아내기
-    let jsonStart = result.indexOf('{');
-    let jsonEnd = result.lastIndexOf('}');
-    if (jsonStart === -1 || jsonEnd === -1) {
-      return res.status(500).json({ message: 'GPT 응답에서 JSON 형식을 찾을 수 없습니다.' });
+    // ✅ { } 부분 추출
+    const jsonStart = result.indexOf('{');
+    const jsonEnd = result.lastIndexOf('}');
+
+    if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+      return res.status(500).json({ message: 'GPT 응답에서 유효한 JSON 형식을 찾을 수 없습니다.' });
     }
 
     const jsonString = result.substring(jsonStart, jsonEnd + 1);
@@ -83,8 +82,8 @@ async function gptVisionHandler(req, res) {
     let parsedResult;
     try {
       parsedResult = JSON.parse(jsonString);
-    } catch (error) {
-      console.error('JSON 파싱 오류:', error);
+    } catch (parseError) {
+      console.error('JSON 파싱 오류:', parseError);
       return res.status(500).json({ message: 'GPT Vision 응답 JSON 파싱 오류' });
     }
 
